@@ -20,7 +20,7 @@ Configuración por variables de entorno: `PUERTO` (3000), `ORIGEN_CLIENTE` (orig
 ## 2. Modelo
 
 - **Documento:** `id`, `nombre`, `tamano`, `sha256`, `subidoPor`, `subidoEn`, `firmas`, `solicitudActual`. Un solo PDF por documento, que cada firma reemplaza.
-- **Solicitud:** `id` (UUID), `documentoId`, `sha256` (del PDF entregado al móvil), `solicitadoPor`, `estado`, `eventos` (estado y hora).
+- **Solicitud:** `id` (UUID), `documentoId`, `sha256` (del PDF entregado al móvil), `sha256Resultado` (del PDF firmado recibido), `solicitadoPor`, `estado`, `eventos` (estado y hora).
 - **Firma:** `titular` (CN del sujeto), `emisor` (CN del emisor), `serie`, `vigenciaDesde`, `vigenciaHasta`, `fechaDeclarada` (`/M` del diccionario de firma) y `subFilter`.
 
 ```mermaid
@@ -140,6 +140,20 @@ Las rutas del móvil no piden credenciales; la solicitud se identifica por su ID
 ```json
 { "id": "uuid", "documentoId": "uuid", "estado": "EN_PROCESO" }
 ```
+
+`POST /api/solicitudes/{id}/iniciar`:
+
+```json
+{ "id": "uuid", "nombre": "informe.pdf", "sha256": "hex" }
+```
+
+`POST /api/solicitudes/{id}/resultado` y `POST /api/solicitudes/{id}/rechazo`:
+
+```json
+{ "id": "uuid", "estado": "FIRMADA" }
+```
+
+Las rutas que crean un documento o una solicitud responden `201`; el resto, `200`.
 
 El enlace solo lleva el ID. Al ser un _deep link_ sin verificación, se declara como solución provisional, no equivalente a un App Link.
 
