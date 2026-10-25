@@ -35,6 +35,7 @@ stateDiagram-v2
 
 | Método | Ruta                               | Actor | Propósito                                                                                             |
 | ------ | ---------------------------------- | ----- | ----------------------------------------------------------------------------------------------------- |
+| GET    | `/api/estado`                      | Todos | Estado del servicio                                                                                   |
 | GET    | `/api/documentos`                  | Web   | Lista con estado y última firma                                                                       |
 | POST   | `/api/documentos`                  | Web   | Subir PDF: cuerpo `application/pdf`, nombre en `X-Nombre-Archivo` codificado con `encodeURIComponent` |
 | GET    | `/api/documentos/{id}`             | Web   | Metadatos, firmas y solicitud actual con eventos                                                      |
@@ -56,6 +57,12 @@ Las rutas del móvil no piden credenciales; la solicitud se identifica por su ID
 | `RECHAZADA` | La solicitud actual está en `RECHAZADA`                       |
 | `FIRMADO`   | Sin solicitud en curso ni rechazada, y con al menos una firma |
 | `SIN_FIRMA` | Sin solicitud y sin firmas                                    |
+
+`GET /api/estado`: responde `200` si el servicio está en marcha y puede leer sus datos. Sirve para comprobar desde el teléfono o el despliegue que la API es alcanzable, y para comparar la hora del servicio, que es la de los eventos, con la del equipo que registra la evidencia.
+
+```json
+{ "estado": "OK", "hora": "2026-10-25T14:00:00Z" }
+```
 
 `GET /api/documentos`: lista de documentos.
 
@@ -160,6 +167,7 @@ Es una lectura de datos para mostrarlos en la web, **no una validación**: no co
 | FS-08 | Validaciones, caducidad y bloqueo de repeticiones              | P3        | Casos inválidos                   |
 | FS-09 | Comprobar la integridad de cada firma                          | P3        | Comparación con validador externo |
 | FS-10 | Conservar documentos y solicitudes tras reiniciar el servicio  | P2        | Lista igual tras reiniciar        |
+| FS-11 | Informar el estado del servicio                                | P2        | `curl` a `/api/estado`            |
 
 ## 6. Evaluación
 
