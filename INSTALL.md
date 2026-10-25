@@ -19,16 +19,16 @@ Editar `ORIGEN_CLIENTE` en `.env` con la dirección exacta de la web (p. ej. `ht
 ```sh
 docker build -t firmador-servicio .
 docker run -d --name firmador-servicio -p 3000:3000 \
-  --env-file .env \
-  -v firmador-datos:/app/datos firmador-servicio
+  --env-file .env -v ./datos:/app/datos firmador-servicio
 ```
 
-Los documentos y las solicitudes se guardan en el volumen `firmador-datos` y se conservan al recrear el contenedor. Tras cualquier cambio en `src/`, recrear:
+Los documentos y las solicitudes se guardan en la carpeta `datos/` del proyecto (`db.json` y `archivos/{id}.pdf`), montada en el contenedor, y se conservan al recrearlo. Tras cualquier cambio en `src/`, reconstruir y recrear:
 
 ```sh
+docker build -t firmador-servicio .
 docker rm -f firmador-servicio
-docker build -t firmador-servicio . && docker run -d --name firmador-servicio -p 3000:3000 \
-  --env-file .env -v firmador-datos:/app/datos firmador-servicio
+docker run -d --name firmador-servicio -p 3000:3000 \
+  --env-file .env -v ./datos:/app/datos firmador-servicio
 ```
 
 Sin Docker: `npm install` y `npm start`.

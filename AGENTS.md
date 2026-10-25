@@ -16,7 +16,7 @@ Todo el repositorio es P2 (iteración I5, RF07) y se hace antes que la web, que 
 ## Comandos
 
 - Node 24. `npm install` · `npm start` (`node --env-file=.env src/servidor.js`) · `npm run dev` (lo mismo con `--watch`).
-- Docker: imagen `node:24-alpine` con volumen en `/app/datos` para los datos persistentes; comandos en `INSTALL.md`.
+- Docker: imagen `node:24-alpine` con la carpeta `./datos` del proyecto montada en `/app/datos` para los datos persistentes; comandos en `INSTALL.md`.
 - `.env` fuera de git; `.env.sample` con los nombres del §1 de la especificación y sin valores reales.
 - Mientras no exista FM-13, el móvil se simula con `curl`. Para la extracción de firmas, usar los PDF firmados por el teléfono en `../../evidencias/I3_firma_pdf/` e `I4_validacion/` (solo lectura; no modificarlos ni moverlos).
 - El teléfono alcanza el servicio por `http://<IP-del-equipo>:3000` en la misma red (abrir el puerto en el cortafuegos si hace falta) o por el dominio. Nada de `localhost` ni IPs fijas en el código: todo por variables de entorno.
