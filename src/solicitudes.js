@@ -11,6 +11,12 @@ function registrar(solicitud, estado) {
   console.log(`${hora} documento ${solicitud.documentoId} solicitud ${estado}`);
 }
 
+async function obtener(id) {
+  const solicitud = await datos.obtenerSolicitud(id);
+  if (!solicitud) throw Object.assign(new Error('Solicitud no encontrada'), { status: 404 });
+  return solicitud;
+}
+
 export async function crear(documentoId, usuario) {
   const documento = await datos.obtenerDocumento(documentoId);
   const solicitud = {
@@ -35,12 +41,12 @@ export async function crear(documentoId, usuario) {
 }
 
 export async function consultar(id) {
-  const solicitud = await datos.obtenerSolicitud(id);
+  const solicitud = await obtener(id);
   return { id: solicitud.id, documentoId: solicitud.documentoId, estado: solicitud.estado };
 }
 
 export async function iniciar(id) {
-  const solicitud = await datos.obtenerSolicitud(id);
+  const solicitud = await obtener(id);
   registrar(solicitud, 'EN_PROCESO');
   await datos.guardarSolicitud(solicitud);
   const documento = await datos.obtenerDocumento(solicitud.documentoId);
@@ -48,12 +54,12 @@ export async function iniciar(id) {
 }
 
 export async function documentoAFirmar(id) {
-  const solicitud = await datos.obtenerSolicitud(id);
+  const solicitud = await obtener(id);
   return datos.leerArchivo(solicitud.documentoId);
 }
 
 export async function recibirResultado(id, bytes) {
-  const solicitud = await datos.obtenerSolicitud(id);
+  const solicitud = await obtener(id);
   solicitud.sha256Resultado = await reemplazarPorFirmado(solicitud.documentoId, bytes);
   registrar(solicitud, 'FIRMADA');
   await datos.guardarSolicitud(solicitud);
@@ -61,7 +67,7 @@ export async function recibirResultado(id, bytes) {
 }
 
 export async function rechazar(id) {
-  const solicitud = await datos.obtenerSolicitud(id);
+  const solicitud = await obtener(id);
   registrar(solicitud, 'RECHAZADA');
   await datos.guardarSolicitud(solicitud);
   return { id: solicitud.id, estado: solicitud.estado };

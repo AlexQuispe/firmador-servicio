@@ -153,7 +153,7 @@ Las rutas del móvil no piden credenciales; la solicitud se identifica por su ID
 { "id": "uuid", "estado": "FIRMADA" }
 ```
 
-Las rutas que crean un documento o una solicitud responden `201`; el resto, `200`.
+Las rutas que crean un documento o una solicitud responden `201`; el resto, `200`. Las rutas `/api/solicitudes/{id}` responden `404` si la solicitud no existe, para que la web descarte la que tenga guardada; cualquier otro fallo responde `500` con un mensaje genérico.
 
 El enlace es un Intent URI de Chrome y solo lleva el ID. Chrome lo entrega únicamente al paquete `bo.edu.umsa.firmadormovil`; el paquete no se verifica criptográficamente como en un App Link.
 

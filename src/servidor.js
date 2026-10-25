@@ -68,6 +68,7 @@ app.post('/api/solicitudes/:id/rechazo', async (req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err.message);
+  if (err.status === 404) return res.status(404).json({ mensaje: err.message });
   res.status(500).json({ mensaje: 'Error interno del servicio' });
 });
 
