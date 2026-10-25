@@ -1,66 +1,171 @@
 # Especificaciones técnicas — Firmador servicio
 
-**Versión:** 0.2 · **Estado:** contrato preliminar · **Prioridad:** P2 · **Trazabilidad:** requisito RF07 de la monografía (apartado 3.2.2).
+**Versión:** 0.4 · **Estado:** listo para implementar · **Prioridad:** P2 · **Trazabilidad:** requisito RF07 y criterio V5 de la monografía (apartados 3.2.2 y 3.2.6).
 
 ## 1. Arquitectura
 
-API REST (NestJS) entre la web y el móvil. No ejecuta operaciones con claves privadas. El cliente y el móvil usan credenciales distintas. HTTPS fuera de pruebas locales.
+Aplicación Express (Node.js, JavaScript) que guarda los documentos, gestiona las solicitudes de firma entre la web y el móvil, y extrae los datos de las firmas. La web (`firmador-cliente`) se sirve aparte en el puerto 8080 y llama a esta API en el 3000. Ambos corren en el mismo equipo (la laptop o un servidor con dominio) y el teléfono llega a ellos por IP o dominio. No ejecuta operaciones con claves privadas.
 
 Simplificaciones de la PoC (declaradas, no aptas para producción):
 
-- 🔑 Autenticación con un token estático por actor (`CLIENTE_TOKEN`, `MOVIL_TOKEN`) en variables de entorno.
-- 💾 Persistencia en disco local o SQLite; el PDF se borra al expirar la solicitud.
-- 🔁 Polling del cliente; sin notificaciones push.
+- ✅ Solo casos ideales: sin validación de entradas ni manejo detallado de errores.
+- 🔓 Ni la web ni el móvil se autentican ante la API. El usuario de la sesión simulada llega en la cabecera `X-Usuario`. El móvil opera la solicitud solo con su ID, un UUID v4 aleatorio que viaja en el enlace. No se compila ningún secreto en la app: quedaría al alcance de cualquiera con el APK. La firma la autoriza el titular en el teléfono (confirmación y autenticación del Keystore), y el firmante se lee del certificado del PDF.
+- 💾 Persistencia en `datos/db.json` y los PDF en `datos/archivos/`; sin base de datos.
+- 🔁 La web consulta el estado al volver del teléfono o a pedido del usuario; sin consultas periódicas ni notificaciones push.
+- 🌐 HTTP por IP en la red local; HTTPS solo si se despliega con dominio. Sin App Link verificado.
+- 🔀 CORS permitido solo para `ORIGEN_CLIENTE`, con las cabeceras `X-Usuario`, `X-Nombre-Archivo` y `Content-Type` (la subida usa `application/pdf`, que requiere verificación previa), mediante un middleware propio de pocas líneas.
 
-## 2. API v1
+Configuración por variables de entorno: `PUERTO` (3000), `ORIGEN_CLIENTE` (origen exacto de la web, p. ej. `http://192.168.1.10:8080` o `https://<dominio>`). Express escucha en todas las interfaces para que el teléfono lo alcance.
 
-| Método | Ruta                                 | Actor   | Propósito                               |
-| ------ | ------------------------------------ | ------- | --------------------------------------- |
-| POST   | `/api/v1/solicitudes`                | Cliente | Crear solicitud y subir PDF (multipart) |
-| GET    | `/api/v1/solicitudes/{id}`           | Cliente | Estado y metadatos                      |
-| POST   | `/api/v1/solicitudes/{id}/tomar`     | Móvil   | Reservar (`PENDIENTE` → `EN_PROCESO`)   |
-| GET    | `/api/v1/solicitudes/{id}/documento` | Móvil   | Descargar el PDF original               |
-| POST   | `/api/v1/solicitudes/{id}/resultado` | Móvil   | Subir el PDF firmado                    |
-| POST   | `/api/v1/solicitudes/{id}/rechazo`   | Móvil   | Registrar rechazo                       |
-| GET    | `/api/v1/solicitudes/{id}/firmado`   | Cliente | Descargar el PDF firmado                |
+Dependencias: `express` y `node-forge` (lectura del CMS). Nada más sin justificar.
 
-Respuesta de creación (ejemplo):
+## 2. Modelo
+
+- **Documento:** `id`, `nombre`, `tamano`, `sha256`, `subidoPor`, `subidoEn`, `firmas`, `solicitudActual`. Un solo archivo, `datos/archivos/{id}.pdf`, que cada firma reemplaza.
+- **Solicitud:** `id` (UUID), `documentoId`, `sha256` (del PDF entregado al móvil), `solicitadoPor`, `estado`, `eventos` (estado y hora).
+- **Firma:** `titular` (CN del sujeto), `emisor` (CN del emisor), `serie`, `vigenciaDesde`, `vigenciaHasta`, `fechaDeclarada` (`/M` del diccionario de firma) y `subFilter`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDIENTE
+    PENDIENTE --> EN_PROCESO: móvil inicia
+    EN_PROCESO --> FIRMADA: resultado recibido
+    EN_PROCESO --> RECHAZADA: usuario rechaza
+```
+
+## 3. API
+
+| Método | Ruta                               | Actor | Propósito                                                                                             |
+| ------ | ---------------------------------- | ----- | ----------------------------------------------------------------------------------------------------- |
+| GET    | `/api/documentos`                  | Web   | Lista con estado y última firma                                                                       |
+| POST   | `/api/documentos`                  | Web   | Subir PDF: cuerpo `application/pdf`, nombre en `X-Nombre-Archivo` codificado con `encodeURIComponent` |
+| GET    | `/api/documentos/{id}`             | Web   | Metadatos, firmas y solicitud actual con eventos                                                      |
+| GET    | `/api/documentos/{id}/archivo`     | Web   | PDF actual                                                                                            |
+| POST   | `/api/documentos/{id}/solicitudes` | Web   | Crear solicitud sobre el PDF actual                                                                   |
+| GET    | `/api/solicitudes/{id}`            | Web   | Estado                                                                                                |
+| POST   | `/api/solicitudes/{id}/iniciar`    | Móvil | `PENDIENTE` → `EN_PROCESO`; devuelve nombre y SHA-256                                                 |
+| GET    | `/api/solicitudes/{id}/documento`  | Móvil | PDF a firmar                                                                                          |
+| POST   | `/api/solicitudes/{id}/resultado`  | Móvil | PDF firmado como cuerpo `application/pdf`                                                             |
+| POST   | `/api/solicitudes/{id}/rechazo`    | Móvil | Registrar rechazo                                                                                     |
+
+Las rutas del móvil no piden credenciales; la solicitud se identifica por su ID. Las rutas de la web responden JSON, salvo `/archivo`.
+
+**Estado del documento** (campo `estado` en la lista y el detalle), calculado por el servicio:
+
+| `estado`    | Condición                                                     |
+| ----------- | ------------------------------------------------------------- |
+| `EN_CURSO`  | La solicitud actual está en `PENDIENTE` o `EN_PROCESO`        |
+| `RECHAZADA` | La solicitud actual está en `RECHAZADA`                       |
+| `FIRMADO`   | Sin solicitud en curso ni rechazada, y con al menos una firma |
+| `SIN_FIRMA` | Sin solicitud y sin firmas                                    |
+
+`GET /api/documentos`: lista de documentos.
+
+```json
+[
+  {
+    "id": "uuid",
+    "nombre": "informe.pdf",
+    "tamano": 182345,
+    "subidoPor": "operador",
+    "subidoEn": "2026-10-25T14:02:00Z",
+    "estado": "FIRMADO",
+    "cantidadFirmas": 1,
+    "ultimaFirma": { "titular": "CN del sujeto", "fechaDeclarada": "2026-10-25T14:05:00Z" }
+  }
+]
+```
+
+`ultimaFirma` es `null` si no hay firmas.
+
+`POST /api/documentos`: responde con el documento creado, con la misma forma que un elemento de la lista. El servicio decodifica `X-Nombre-Archivo` con `decodeURIComponent`.
+
+`GET /api/documentos/{id}`: detalle.
+
+```json
+{
+  "id": "uuid",
+  "nombre": "informe.pdf",
+  "tamano": 182345,
+  "sha256": "hex",
+  "subidoPor": "operador",
+  "subidoEn": "2026-10-25T14:02:00Z",
+  "estado": "FIRMADO",
+  "firmas": [
+    {
+      "titular": "CN del sujeto",
+      "emisor": "CN del emisor",
+      "serie": "hex",
+      "vigenciaDesde": "2026-10-01T00:00:00Z",
+      "vigenciaHasta": "2027-10-01T00:00:00Z",
+      "fechaDeclarada": "2026-10-25T14:05:00Z",
+      "subFilter": "ETSI.CAdES.detached"
+    }
+  ],
+  "solicitudActual": {
+    "id": "uuid",
+    "estado": "FIRMADA",
+    "solicitadoPor": "operador",
+    "eventos": [
+      { "estado": "PENDIENTE", "hora": "2026-10-25T14:03:00Z" },
+      { "estado": "EN_PROCESO", "hora": "2026-10-25T14:04:00Z" },
+      { "estado": "FIRMADA", "hora": "2026-10-25T14:05:10Z" }
+    ]
+  }
+}
+```
+
+`firmas` va de la más antigua a la más reciente y `eventos` en orden cronológico. `solicitudActual` es `null` si nunca se pidió una firma.
+
+`GET /api/documentos/{id}/archivo`: el PDF actual, con `Content-Type: application/pdf` y `Content-Disposition: attachment; filename="<nombre>"`. La web lo abre con un enlace a otro origen, donde Chrome ignora el atributo `download`; sin esta cabecera podría mostrar el PDF en lugar de descargarlo.
+
+`POST /api/documentos/{id}/solicitudes` (ejemplo de respuesta):
 
 ```json
 {
   "id": "uuid",
   "estado": "PENDIENTE",
   "sha256Documento": "hex",
-  "expiraEn": "2026-10-25T18:00:00Z",
-  "enlaceAplicacion": "https://<dominio>/firmar/uuid"
+  "enlaceAplicacion": "firmadormovil://firmar/uuid"
 }
 ```
 
-El enlace solo lleva el ID; nunca tokens.
+`GET /api/solicitudes/{id}`:
 
-## 3. Requisitos
+```json
+{ "id": "uuid", "documentoId": "uuid", "estado": "EN_PROCESO" }
+```
 
-| ID    | Requisito                                               | Verificación              |
-| ----- | ------------------------------------------------------- | ------------------------- |
-| FS-01 | Registrar la solicitud con el PDF y su SHA-256          | Prueba de API             |
-| FS-02 | Rechazar las peticiones sin el token del actor correcto | Prueba de acceso denegado |
-| FS-03 | Aplicar las transiciones válidas y la caducidad         | Pruebas de transición     |
-| FS-04 | Entregar el original solo al móvil                      | Prueba de autorización    |
-| FS-05 | Guardar el firmado sin sobrescribir el original         | Comparación de SHA-256    |
-| FS-06 | Bloquear una segunda toma o un resultado repetido       | Prueba de repetición      |
-| FS-07 | Entregar el firmado solo al cliente                     | Prueba de acceso denegado |
-| FS-08 | Registrar eventos sin secretos ni contenido del PDF     | Revisión de logs          |
+El enlace solo lleva el ID. Al ser un _deep link_ sin verificación, se declara como solución provisional, no equivalente a un App Link.
 
-## 4. Seguridad
+## 4. Extracción de firmas
 
-- No confiar en el ID como credencial; validar tamaño y tipo real del PDF; CORS restrictivo.
-- Al recibir el resultado, comprobar que corresponde a la solicitud. Opcionalmente, verificar la firma con un validador independiente.
-- App Links: publicar `/.well-known/assetlinks.json` si el servicio controla el dominio de apertura.
+Al recibir el resultado:
 
-## 5. Evaluación
+1. Reemplazar el PDF del documento y actualizar su `sha256`. Es una regla de negocio de este sistema de ejemplo, no del firmador móvil, que solo devuelve el resultado; otro sistema documental podría conservar las versiones. No se conserva una copia aparte del original: la firma incremental mantiene intactos los bytes anteriores y su `ByteRange` los cubre, y el SHA-256 de lo entregado al móvil queda en la solicitud.
+2. Ubicar los diccionarios de firma (`/ByteRange`, `/Contents`, `/M`, `/SubFilter`), decodificar cada `/Contents` como CMS con `node-forge` y leer el certificado del firmante.
+3. Reemplazar `firmas` del documento por las extraídas. Como el móvil firma con guardado incremental, el PDF nuevo contiene también las firmas anteriores.
 
-Aporta evidencia para RF07: solicitudes completadas extremo a extremo, casos de acceso indebido bloqueados y tiempo desde la creación hasta el resultado (separando la espera del usuario). Los indicadores formales los fija la monografía en el apartado 3.2.6.
+Es una lectura de datos para mostrarlos en la web, **no una validación**: no comprueba integridad, cadena ni revocación. La evaluación formal (K1) usa validadores independientes. La comprobación de integridad (resumen del `ByteRange` contra el atributo `messageDigest`) queda como mejora.
 
-## 6. Fuera de alcance
+## 5. Requisitos
 
-Gestión real de identidades, almacenamiento persistente de producción, colas, push y validación con efectos legales.
+| ID    | Requisito                                                      | Prioridad | Verificación                      |
+| ----- | -------------------------------------------------------------- | --------- | --------------------------------- |
+| FS-01 | Guardar documentos con su SHA-256 y listarlos                  | P2        | Lista tras subir un PDF           |
+| FS-02 | Crear solicitudes sobre el PDF actual de un documento          | P2        | Respuesta con ID y enlace         |
+| FS-03 | Identificar las solicitudes con UUID v4 sin exponer su lista   | P2        | Revisión de código                |
+| FS-04 | Aplicar las transiciones del §2                                | P2        | Flujo completo                    |
+| FS-05 | Reemplazar el PDF por el firmado y registrar ambos SHA-256     | P2        | Hashes en `db.json`               |
+| FS-06 | Extraer titular, emisor y fecha declarada de cada firma        | P2        | Comparación con el certificado    |
+| FS-07 | Registrar la hora de cada evento sin secretos ni contenido PDF | P2        | Revisión de `db.json` y consola   |
+| FS-08 | Validaciones, caducidad y bloqueo de repeticiones              | P3        | Casos inválidos                   |
+| FS-09 | Comprobar la integridad de cada firma                          | P3        | Comparación con validador externo |
+
+## 6. Evaluación
+
+Aporta evidencia descriptiva para RF07 y V5: solicitudes completadas extremo a extremo y tiempo desde la creación hasta el resultado, separando la espera del usuario. Los indicadores formales los fija la monografía en el apartado 3.2.6.
+
+## 7. Fuera de alcance
+
+Gestión real de identidades, autenticación de la web, base de datos, HTTPS, App Links verificados, colas, push, validación criptográfica con efectos legales y producción.
