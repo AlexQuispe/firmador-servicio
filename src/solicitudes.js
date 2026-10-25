@@ -29,7 +29,8 @@ export async function crear(documentoId, usuario) {
     id: solicitud.id,
     estado: solicitud.estado,
     sha256Documento: solicitud.sha256,
-    enlaceAplicacion: `firmadormovil://firmar/${solicitud.id}`,
+    // Intent URI: Chrome solo lo entrega a este paquete, no a otra app con el mismo esquema.
+    enlaceAplicacion: `intent://firmar/${solicitud.id}#Intent;scheme=firmadormovil;package=bo.edu.umsa.firmadormovil;end`,
   };
 }
 

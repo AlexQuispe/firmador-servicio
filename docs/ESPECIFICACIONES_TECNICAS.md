@@ -131,7 +131,7 @@ Las rutas del móvil no piden credenciales; la solicitud se identifica por su ID
   "id": "uuid",
   "estado": "PENDIENTE",
   "sha256Documento": "hex",
-  "enlaceAplicacion": "firmadormovil://firmar/uuid"
+  "enlaceAplicacion": "intent://firmar/uuid#Intent;scheme=firmadormovil;package=bo.edu.umsa.firmadormovil;end"
 }
 ```
 
@@ -155,7 +155,7 @@ Las rutas del móvil no piden credenciales; la solicitud se identifica por su ID
 
 Las rutas que crean un documento o una solicitud responden `201`; el resto, `200`.
 
-El enlace solo lleva el ID. Al ser un _deep link_ sin verificación, se declara como solución provisional, no equivalente a un App Link.
+El enlace es un Intent URI de Chrome y solo lleva el ID. Chrome lo entrega únicamente al paquete `bo.edu.umsa.firmadormovil`; el paquete no se verifica criptográficamente como en un App Link.
 
 ## 4. Extracción de firmas
 
