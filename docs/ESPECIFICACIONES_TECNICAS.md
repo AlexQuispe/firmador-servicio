@@ -187,6 +187,8 @@ Es una lectura de datos para mostrarlos en la web, **no una validación**: no co
 
 Aporta evidencia descriptiva para RF07 y V5: solicitudes completadas extremo a extremo y tiempo desde la creación hasta el resultado, separando la espera del usuario. Los indicadores formales los fija la monografía en el apartado 3.2.6.
 
+Campos por ejecución: fecha · commits del servicio, la web y la app · dispositivo, Android y versión de Chrome · por solicitud: ID, documento, estado final y hora de cada evento · SHA-256 del PDF subido, del entregado al móvil (`sha256`), del que informa la app y del resultado (`sha256Resultado`) · firmas extraídas frente al certificado · resultado de un validador independiente sobre el PDF final · tiempo de firma informado por la app. Sin PIN, claves ni datos personales.
+
 ## 7. Fuera de alcance
 
 Gestión real de identidades, autenticación de la web, HTTPS, App Links verificados, colas, push, validación criptográfica con efectos legales y producción.

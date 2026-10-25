@@ -33,7 +33,7 @@ Todo el repositorio es P2 (iteración I5, RF07) y se hace antes que la web, que 
 
 ## Evidencia
 
-Cada ejecución de prueba se registra en `../../evidencias/I5_<nombre>/` con los campos de la §6 de la especificación (horas de los eventos y hashes). Ejecuciones previas a la definición de indicadores son de desarrollo, no resultados. No afirmar en código, commits ni docs validez legal, equivalencia de seguridad ni compatibilidad institucional.
+Cada ejecución de prueba se registra en `../../evidencias/I5_complementos/` con los campos de la §6 de `docs/ESPECIFICACIONES_TECNICAS.md` (horas de los eventos y hashes). Ejecuciones previas a la definición de indicadores son de desarrollo, no resultados. No afirmar en código, commits ni docs validez legal, equivalencia de seguridad ni compatibilidad institucional.
 
 ## Forma de trabajo
 
