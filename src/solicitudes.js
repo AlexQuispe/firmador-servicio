@@ -3,6 +3,12 @@ import { randomUUID } from 'node:crypto';
 import * as datos from './datos.js';
 import { reemplazarPorFirmado } from './documentos.js';
 
+// URL base por la que el teléfono alcanza este servicio (IP de la red local o dominio).
+const URL_PUBLICA = process.env.URL_PUBLICA;
+// Nombre que el móvil muestra al titular junto con el host (opcional).
+const NOMBRE_SISTEMA = process.env.NOMBRE_SISTEMA;
+const parametrosEnlace = new URLSearchParams({ servicio: URL_PUBLICA, ...(NOMBRE_SISTEMA && { sistema: NOMBRE_SISTEMA }) });
+
 // El log no lleva el ID de la solicitud: basta conocerlo para operarla.
 function registrar(solicitud, estado) {
   const hora = new Date().toISOString();
@@ -36,7 +42,8 @@ export async function crear(documentoId, usuario) {
     estado: solicitud.estado,
     sha256Documento: solicitud.sha256,
     // Intent URI: Chrome solo lo entrega a este paquete, no a otra app con el mismo esquema.
-    enlaceAplicacion: `intent://firmar/${solicitud.id}#Intent;scheme=firmadormovil;package=bo.edu.umsa.firmadormovil;end`,
+    // Lleva la URL del servicio para que el móvil sepa a quién responder, y el nombre que muestra al titular.
+    enlaceAplicacion: `intent://firmar/${solicitud.id}?${parametrosEnlace}#Intent;scheme=firmadormovil;package=bo.edu.umsa.firmadormovil;end`,
   };
 }
 

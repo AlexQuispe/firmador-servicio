@@ -1,5 +1,6 @@
 // Único módulo que conoce el almacenamiento: db.json y los PDF bajo DIR_DATOS.
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const DIR_DATOS = process.env.DIR_DATOS ?? 'datos';
@@ -10,8 +11,11 @@ async function leerDb() {
   return JSON.parse(await readFile(RUTA_DB, 'utf8'));
 }
 
+// Escribe en un temporal y renombra: una lectura simultánea nunca ve db.json a medio escribir.
 async function escribirDb(db) {
-  await writeFile(RUTA_DB, JSON.stringify(db, null, 2));
+  const temporal = `${RUTA_DB}.${randomUUID()}.tmp`;
+  await writeFile(temporal, JSON.stringify(db, null, 2));
+  await rename(temporal, RUTA_DB);
 }
 
 export async function iniciarDatos() {

@@ -1,6 +1,6 @@
 # 🗂️ Firmador servicio
 
-Backend Express que **guarda documentos y gestiona solicitudes de firma** entre la web (`firmador-cliente`) y el teléfono (`firmador-movil`). Junto con la web, representa el **sistema de gestión documental de ejemplo** de la monografía: el escenario de una entidad usuaria como AGETIC con su Sistema de Plantillas.
+Backend Express que **guarda documentos y gestiona solicitudes de firma** entre la web (`firmador-cliente`), el teléfono (`firmador-movil`) y Jacobitus Escritorio. Junto con la web, representa el **sistema de gestión documental de ejemplo** de la monografía: el escenario de una entidad usuaria como AGETIC con su Sistema de Plantillas.
 
 > ⚠️ **Prueba de concepto, prioridad P2.** No posee claves, no firma, no emite certificados y **no** representa al servicio de certificación de la ECA. Solo cubre los casos ideales.
 
@@ -11,14 +11,17 @@ flowchart LR
     W[🌐 firmador-cliente] -- sube PDF / crea solicitud / consulta estado --> S[🗂️ firmador-servicio]
     W -- enlace de apertura --> M[📱 firmador-movil]
     M -- descarga PDF / entrega PDF firmado --> S
+    W -- HTTPS localhost:9000 --> J[Jacobitus Escritorio]
+    W -- entrega PDF firmado --> S
     M -. firma con clave StrongBox .-> M
+    J -. firma con token o softoken .-> J
 ```
 
 ## ✅ Responsabilidades
 
 - Guardar los documentos; cada firma reemplaza el PDF por la versión firmada.
 - Crear solicitudes con identificador opaco y SHA-256 del PDF, y controlar sus estados.
-- Entregar el PDF al móvil y recibir el resultado.
+- Entregar el PDF al móvil y recibir su resultado; recibir también el PDF que firma la web con Jacobitus.
 - Leer titular, emisor y fecha declarada de cada firma para mostrarlos en la web.
 - Aceptar peticiones de la web desde su origen configurado (CORS); la API escucha en el puerto 3000, por IP o dominio.
 
@@ -27,7 +30,7 @@ flowchart LR
 ```mermaid
 stateDiagram-v2
     [*] --> PENDIENTE
-    PENDIENTE --> EN_PROCESO: móvil inicia
+    PENDIENTE --> EN_PROCESO: móvil o web inicia
     EN_PROCESO --> FIRMADA: resultado recibido
     EN_PROCESO --> RECHAZADA: usuario rechaza
 ```

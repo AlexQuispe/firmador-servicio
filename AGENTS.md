@@ -25,7 +25,7 @@ Todo el repositorio es P2 (iteración I5, RF07) y se hace antes que la web, que 
 
 - Stack: Express y `node-forge`, módulos ES, sin TypeScript, sin ORM. Persistencia en `datos/db.json` y los PDF en `datos/archivos/{id}.pdf`, bajo `DIR_DATOS`. Dependencia nueva: justificar necesidad y licencia.
 - Solo casos ideales: sin validaciones ni manejo detallado de errores mientras P2 no esté cerrado; un manejador final responde 500 con un mensaje genérico.
-- Sin credenciales ni secretos compilados en la app: el móvil opera la solicitud con su ID (UUID v4). El enlace de apertura lleva solo el ID.
+- Sin credenciales ni secretos compilados en la app: el móvil opera la solicitud con su ID (UUID v4). El enlace de apertura lleva solo el ID, la URL pública del servicio (`URL_PUBLICA`) y, opcionalmente, el nombre del sistema (`NOMBRE_SISTEMA`).
 - Nada de contenido de PDF en logs ni en los datos guardados; solo nombres, hashes, estados y horas.
 - Reemplazar el PDF por el firmado es una regla de negocio de este sistema de ejemplo, no del firmador móvil. Guardar el SHA-256 de lo entregado al móvil y del resultado.
 - Los datos de firma se leen del PDF recibido, no de lo que declare el cliente o el móvil. Es una lectura, no una validación: no responder ni rotular nada como «firma válida».

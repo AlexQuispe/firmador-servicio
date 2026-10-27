@@ -4,13 +4,19 @@ import * as documentos from './documentos.js';
 import * as solicitudes from './solicitudes.js';
 
 const PUERTO = process.env.PUERTO ?? 3000;
-const ORIGEN_CLIENTE = process.env.ORIGEN_CLIENTE;
+const ORIGENES_CLIENTE = new Set(
+  (process.env.ORIGEN_CLIENTE ?? '').split(',').map((origen) => origen.trim()).filter(Boolean),
+);
 
 const app = express();
 const pdf = express.raw({ type: 'application/pdf', limit: '20mb' });
 
 app.use((req, res, next) => {
-  res.set('Access-Control-Allow-Origin', ORIGEN_CLIENTE);
+  const origen = req.get('Origin');
+  if (ORIGENES_CLIENTE.has(origen)) {
+    res.set('Access-Control-Allow-Origin', origen);
+    res.vary('Origin');
+  }
   res.set('Access-Control-Allow-Methods', 'GET, POST');
   res.set('Access-Control-Allow-Headers', 'X-Usuario, X-Nombre-Archivo, Content-Type');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
