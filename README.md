@@ -43,4 +43,4 @@ Permite evaluar el requisito **RF07** (solicitudes desde un sistema documental).
 
 Generar claves, firmar, actuar como CA, validar firmas con efectos legales ni autorizar una firma solo porque alguien conoce el ID.
 
-📄 Detalle: [Especificaciones técnicas](docs/ESPECIFICACIONES_TECNICAS.md)
+📄 Detalle: [Especificaciones técnicas](docs/ESPECIFICACIONES_TECNICAS.md) · 🛠️ [Manual de instalación](INSTALL.md) · 📜 [Licencia LPG-Bolivia v1.1](LICENSE)
