@@ -7,6 +7,14 @@
 - Teléfono Android con `firmador-movil`, en la misma red que el equipo. Si el cortafuegos lo bloquea, abrir el puerto 3000.
 - Para el flujo de escritorio, Jacobitus Escritorio abierto en la computadora donde se usa el navegador.
 
+## 📥 Clonación del proyecto
+
+```sh
+git clone https://github.com/AlexQuispe/firmador-servicio.git
+cd firmador-servicio
+git checkout develop
+```
+
 ## ⚙️ Configuración
 
 ```sh

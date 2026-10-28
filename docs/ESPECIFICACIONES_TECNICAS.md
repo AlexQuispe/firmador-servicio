@@ -1,6 +1,6 @@
 # Especificaciones técnicas — Firmador servicio
 
-**Versión:** 0.5 · **Estado:** listo para implementar · **Prioridad:** P2 · **Trazabilidad:** requisito RF07 y criterio V5 de la monografía (apartados 3.2.2 y 3.2.6).
+**Versión:** 0.5 · **Estado:** implementado y probado · **Prioridad:** P2 · **Trazabilidad:** requisito RF07 y criterio V5 de la monografía (apartados 3.2.2 y 3.2.6).
 
 ## 1. Alcance y contexto
 
@@ -182,6 +182,8 @@ Es una lectura de datos para mostrarlos en la web, **no una validación**: no co
 | FS-09 | Comprobar la integridad de cada firma                          | P3        | Comparación con validador externo |
 | FS-10 | Conservar documentos y solicitudes tras reiniciar el servicio  | P2        | Lista igual tras reiniciar        |
 | FS-11 | Informar el estado del servicio                                | P2        | `curl` a `/api/estado`            |
+
+Todos están implementados, salvo FS-08 y FS-09.
 
 ## 6. Evaluación
 
