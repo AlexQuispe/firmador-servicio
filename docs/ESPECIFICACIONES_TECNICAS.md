@@ -1,6 +1,6 @@
 # Especificaciones técnicas — Firmador servicio
 
-**Versión:** 0.5 · **Estado:** listo para implementar · **Prioridad:** P2 · **Trazabilidad:** requisito RF07 y criterio V5 de la monografía (apartados 3.2.2 y 3.2.6).
+**Versión:** 0.5 · **Estado:** implementado y probado · **Prioridad:** P2 · **Trazabilidad:** requisito RF07 y criterio V5 de la monografía (apartados 3.2.2 y 3.2.6).
 
 ## 1. Alcance y contexto
 
