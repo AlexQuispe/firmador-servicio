@@ -183,6 +183,8 @@ Es una lectura de datos para mostrarlos en la web, **no una validación**: no co
 | FS-10 | Conservar documentos y solicitudes tras reiniciar el servicio  | P2        | Lista igual tras reiniciar        |
 | FS-11 | Informar el estado del servicio                                | P2        | `curl` a `/api/estado`            |
 
+Todos están implementados, salvo FS-08 y FS-09.
+
 ## 6. Evaluación
 
 Aporta evidencia descriptiva para RF07 y V5: solicitudes completadas extremo a extremo y tiempo desde la creación hasta el resultado, separando la espera del usuario. Los indicadores formales los fija la monografía en el apartado 3.2.6.
